@@ -1,0 +1,42 @@
+[project]
+name = "ansible-jsonrpc-server"
+version = "0.0.1"
+description = "A JSON-RPC server for executing Ansible modules over stdin/stdout"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "GPL-3.0-or-later" }
+authors = [{ name = "Ville Rasanen", email = "ville@datacrunch.io" }]
+keywords = ["ansible", "json-rpc", "automation"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: System :: Systems Administration",
+]
+dependencies = ["ansible-core==2.19.13", "msgspec>=0.18", "pebble>=5.0"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.urls]
+Homepage = "https://github.com/vjrasane/ansible-jsonrpc-server"
+Repository = "https://github.com/vjrasane/ansible-jsonrpc-server"
+
+[project.scripts]
+ansible-jsonrpc-server = "ansible_jsonrpc_server.__main__:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["ansible_jsonrpc_server"]
+
+[tool.pyright]
+# Resolve against a local venv; `.` is a source root so `ansible_jsonrpc_server.*` resolves.
+extraPaths = ["."]
+pythonVersion = "3.12"
