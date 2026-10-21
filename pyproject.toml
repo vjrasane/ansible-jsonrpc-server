@@ -1,6 +1,6 @@
 [project]
 name = "ansible-jsonrpc-server"
-version = "0.0.1"
+version = "0.0.2"
 description = "A JSON-RPC server for executing Ansible modules over stdin/stdout"
 readme = "README.md"
 requires-python = ">=3.11"
