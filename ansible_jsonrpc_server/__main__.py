@@ -39,7 +39,12 @@ def main() -> None:
     # installed deps → data dir; ansible scratch → cache dir (safe to purge).
     collections_path = os.path.join(data_dir(), "collections")
     ansible_home = os.path.join(cache_dir(), "ansible")
-    os.makedirs(collections_path, exist_ok=True)
+    # Create the ansible_collections/ dir too, BEFORE the forkserver primes. The
+    # `ansible_collections` namespace package fixes its __path__ at init_plugin_loader
+    # time; if the dir is absent then, collections installed into it at runtime are
+    # invisible to every forked worker ("No module named 'ansible_collections.<ns>'").
+    # With the dir present at init the namespace is live, and a later install is found.
+    os.makedirs(os.path.join(collections_path, "ansible_collections"), exist_ok=True)
     os.environ["ANSIBLE_COLLECTIONS_PATH"] = collections_path
     os.environ["ANSIBLE_HOME"] = ansible_home
     os.environ["ANSIBLE_LOCAL_TEMP"] = os.path.join(ansible_home, "tmp")
