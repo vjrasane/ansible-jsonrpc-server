@@ -61,6 +61,13 @@ fi
 rm -rf "$venv"
 "$py" -m venv "$venv"
 "$venv/bin/python" -m pip install --quiet --disable-pip-version-check $install_spec
+# Verify completeness before trusting the venv: `pip check` catches a satisfied-but-
+# incomplete dependency graph (e.g. ansible-core installed without jinja2), the import
+# smoke catches a broken ansible. On failure set -e aborts before the marker is written,
+# so the next run discards this venv and reinstalls — a partial install self-heals rather
+# than being trusted forever. Output to stderr so stdout stays just the venv python path.
+"$venv/bin/python" -m pip check >&2
+"$venv/bin/python" -c "import ansible" >&2
 : > "$venv/.ready"
 
 echo "$venv/bin/python"
