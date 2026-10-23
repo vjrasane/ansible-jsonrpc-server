@@ -29,6 +29,17 @@ worker — can't corrupt the frames). It exits on EOF or a `shutdown` notificati
 Execution runs in a `pebble` fork pool: the parent process never imports Ansible, so it
 stays responsive to control messages while module runs proceed concurrently in workers.
 
+### Configuration
+
+| Env var | Controls | Default |
+|---|---|---|
+| `ANSIBLE_JSONRPC_FORKS` | worker processes running Ansible concurrently (fork pool size) | `5` |
+| `ANSIBLE_JSONRPC_MAX_INFLIGHT` | dispatch threads accepting requests concurrently | `64` |
+
+Both must be integers `>= 1`; a malformed or out-of-range value aborts startup. Requests
+past `FORKS` queue until a worker frees up; `MAX_INFLIGHT` bounds how many can be read and
+queued at once.
+
 ## Protocol
 
 JSON-RPC 2.0 with **`Content-Length` framing** (LSP-style): each message is
