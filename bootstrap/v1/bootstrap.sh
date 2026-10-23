@@ -13,6 +13,15 @@
 # development), keyed under "dev" so it never collides with a released venv.
 set -eu
 
+# Hermetic install, independent of the caller's env. A surrounding venv/devenv may export
+# a PYTHONPATH of its own site-packages (ansible-core, jinja2, …); the venv's pip would see
+# those as already-satisfied and SKIP installing them into the venv, leaving it broken once
+# the server runs with a clean env. Strip it (and ignore the ~/.local user site) so pip
+# installs every dependency into the venv. Do this here, not in each client, so the script
+# stays truly client-agnostic.
+unset PYTHONPATH PYTHONHOME
+export PYTHONNOUSERSITE=1
+
 version=${1:-}
 py=${2:-}
 
