@@ -3,7 +3,17 @@ from typing import BinaryIO, NoReturn
 import msgspec
 
 _HEADER_SEP = b"\r\n\r\n"
-_encode = msgspec.json.encode
+
+
+def _enc_fallback(obj: object) -> str:
+    # Module results can carry arbitrary Python objects (exception instances, classes /
+    # ABCMeta, …) that msgspec can't JSON-encode. Stringify them so a result is always
+    # sendable — letting the encoder raise here would crash the reply and mask the real
+    # task error (e.g. a module failure) with an opaque "unsupported type" TypeError.
+    return repr(obj)
+
+
+_encode = msgspec.json.Encoder(enc_hook=_enc_fallback).encode
 _decode = msgspec.json.decode
 
 

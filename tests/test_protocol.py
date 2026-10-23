@@ -24,3 +24,19 @@ def test_frame_has_content_length_header():
 
 def test_clean_eof_returns_none():
     assert read_message(io.BytesIO(b"")) is None
+
+
+def test_non_json_object_in_result_is_stringified_not_crashed():
+    # A failed module result can carry non-JSON objects (here an ABCMeta); the encoder must
+    # stringify them so the reply — and the real error message — still gets through, rather
+    # than raising "Encoding objects of type ABCMeta is unsupported".
+    import abc
+
+    class Weird(abc.ABC):
+        pass
+
+    msg = {"jsonrpc": "2.0", "id": 1,
+           "result": {"msg": "parent dir missing", "exception": Weird}}
+    got = read_message(_pipe(msg))
+    assert got["result"]["msg"] == "parent dir missing"
+    assert isinstance(got["result"]["exception"], str)  # stringified, not dropped
