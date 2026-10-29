@@ -45,3 +45,11 @@ packages = ["ansible_jsonrpc_server"]
 # Resolve against a local venv; `.` is a source root so `ansible_jsonrpc_server.*` resolves.
 extraPaths = ["."]
 pythonVersion = "3.12"
+
+# Automated releasing: python-semantic-release reads conventional commits on main, computes
+# the next version, and creates the `vX.Y.Z` tag + GitHub release. It writes no version file
+# (none configured here) — hatch-vcs derives the build version from the tag PSR creates. Do
+# NOT set build_command: PSR builds BEFORE tagging, which hatch-vcs would stamp as a `.devN`
+# version; the release workflow builds in a separate job checked out at the tag instead.
+[tool.semantic_release]
+tag_format = "v{version}"

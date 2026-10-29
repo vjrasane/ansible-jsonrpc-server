@@ -2,34 +2,52 @@ name: release
 
 on:
   push:
-    tags: ["v*"]
+    branches: [main]
+
+# Least privilege by default; jobs widen as needed.
+permissions:
+  contents: read
 
 jobs:
-  build:
+  # Analyze conventional commits, bump + tag + create the GitHub release. PSR writes no
+  # version file; the tag it creates is what hatch-vcs builds from in `deploy`.
+  release:
     runs-on: ubuntu-latest
+    concurrency:
+      group: ${{ github.workflow }}-release-${{ github.ref_name }}
+      cancel-in-progress: false
+    permissions:
+      contents: write # push the version/changelog commit + tag + GitHub release
+    outputs:
+      released: ${{ steps.release.outputs.released }}
+      tag: ${{ steps.release.outputs.tag }}
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # full history + tags so hatch-vcs can derive the version
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0 # full history + tags for commit analysis
+      - uses: python-semantic-release/python-semantic-release@v10
+        id: release
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+  # Only when a release was cut: build AT the new tag (so hatch-vcs derives the clean
+  # version, not a .devN) and publish to PyPI via OIDC trusted publishing — no API token.
+  deploy:
+    needs: release
+    if: needs.release.outputs.released == 'true'
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release.outputs.tag }}
+          fetch-depth: 0 # tag + history so hatch-vcs derives the version
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - run: python -m pip install --upgrade build
       - run: python -m build # sdist + wheel → dist/
-      - uses: actions/upload-artifact@v4
-        with:
-          name: dist
-          path: dist/
-
-  publish:
-    needs: build
-    runs-on: ubuntu-latest
-    environment: pypi
-    permissions:
-      id-token: write # OIDC trusted publishing — no API token
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: dist
-          path: dist/
       - uses: pypa/gh-action-pypi-publish@release/v1
