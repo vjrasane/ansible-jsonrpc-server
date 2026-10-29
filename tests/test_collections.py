@@ -85,6 +85,23 @@ def test_builds_install_command(tmp_path):
     ]
 
 
+def test_ensure_latest_installs_unpinned_and_returns_resolved_version(tmp_path):
+    captured = {}
+
+    def run(cmd, **k):
+        captured["cmd"] = cmd
+        _write_manifest(str(tmp_path), "community.general", "11.2.0")  # galaxy lands it
+        return _ok()
+
+    v = CollectionCache(str(tmp_path), run=run, galaxy="ansible-galaxy").ensure_latest(
+        "community.general")
+    assert captured["cmd"] == [
+        sys.executable, "ansible-galaxy", "collection", "install",
+        "community.general", "-p", str(tmp_path),   # no :version → latest
+    ]
+    assert v == "11.2.0"                             # resolved from MANIFEST
+
+
 def test_source_adds_server_flag(tmp_path):
     captured = {}
 

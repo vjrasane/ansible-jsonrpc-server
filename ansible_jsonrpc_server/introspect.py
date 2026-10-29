@@ -1,21 +1,34 @@
 import json
+import os
 import sys
 from pathlib import Path
 from typing import cast
 
-from ansible.executor.module_common import modify_module
-from ansible.parsing.dataloader import DataLoader
-from ansible.plugins.list import list_plugins
-from ansible.plugins.loader import (
+from .paths import data_dir
+
+# Point ansible at the server's own installed-collections tree (shared with run, so a
+# generated collection is already warm) BEFORE importing ansible: the plugin loader
+# reads ANSIBLE_COLLECTIONS_PATH from config at import, and a value set afterwards is
+# ignored. The ansible_collections dir must also exist before init_plugin_loader freezes
+# the namespace __path__.
+COLLECTIONS_PATH = os.path.join(data_dir(), "collections")
+os.makedirs(os.path.join(COLLECTIONS_PATH, "ansible_collections"), exist_ok=True)
+os.environ["ANSIBLE_COLLECTIONS_PATH"] = COLLECTIONS_PATH
+
+from ansible.executor.module_common import modify_module  # noqa: E402
+from ansible.parsing.dataloader import DataLoader  # noqa: E402
+from ansible.plugins.list import list_plugins  # noqa: E402
+from ansible.plugins.loader import (  # noqa: E402
     action_loader,
     fragment_loader,
     init_plugin_loader,
     module_loader,
 )
-from ansible.template import Templar
-from ansible.utils.plugin_docs import get_docstring
+from ansible.template import Templar  # noqa: E402
+from ansible.utils.plugin_docs import get_docstring  # noqa: E402
 
-init_plugin_loader()
+from .collections import CollectionCache  # noqa: E402
+from .messages import Collection  # noqa: E402
 
 
 def log(msg: str) -> None:
@@ -73,6 +86,17 @@ def process_module(fqcn: str, collection: str) -> dict:
 def main() -> None:
     job = json.loads(sys.argv[1])
     collection: str = job["collection"]
+    version: str | None = job.get("version")
+    source: str | None = job.get("source")
+
+    # Install, THEN init the loader. The running server installs per-request and then
+    # forks a fresh worker that loads from the populated tree; a single introspect process
+    # has no such fork, so init must follow the install or the loader caches the collection
+    # as absent. ANSIBLE_COLLECTIONS_PATH / the namespace dir were set at import (above).
+    cache = CollectionCache(COLLECTIONS_PATH)
+    resolved = (cache.ensure(Collection(name=collection, version=version, source=source))
+                if version else cache.ensure_latest(collection, source))
+    init_plugin_loader()
 
     names = list(list_plugins("module", [collection]).keys())
     if not names:
@@ -87,7 +111,8 @@ def main() -> None:
             log(f"error on {fqcn}: {e}")
             raise
 
-    json.dump({"modules": modules}, sys.stdout, default=str)
+    json.dump({"collection": collection, "version": resolved, "modules": modules},
+              sys.stdout, default=str)
 
 
 if __name__ == "__main__":
