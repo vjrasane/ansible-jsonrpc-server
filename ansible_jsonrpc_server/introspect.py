@@ -89,13 +89,19 @@ def main() -> None:
     version: str | None = job.get("version")
     source: str | None = job.get("source")
 
-    # Install, THEN init the loader. The running server installs per-request and then
-    # forks a fresh worker that loads from the populated tree; a single introspect process
-    # has no such fork, so init must follow the install or the loader caches the collection
-    # as absent. ANSIBLE_COLLECTIONS_PATH / the namespace dir were set at import (above).
-    cache = CollectionCache(COLLECTIONS_PATH)
-    resolved = (cache.ensure(Collection(name=collection, version=version, source=source))
-                if version else cache.ensure_latest(collection, source))
+    # ansible.builtin / ansible.legacy ship inside ansible-core — there is nothing to
+    # acquire from Galaxy and no collection version to pin; introspect them straight off
+    # the venv's ansible-core. For everything else: install, THEN init the loader. The
+    # running server installs per-request and then forks a fresh worker that loads from
+    # the populated tree; a single introspect process has no such fork, so init must
+    # follow the install or the loader caches the collection as absent.
+    # ANSIBLE_COLLECTIONS_PATH / the namespace dir were set at import (above).
+    if collection in ("ansible.builtin", "ansible.legacy"):
+        resolved = None
+    else:
+        cache = CollectionCache(COLLECTIONS_PATH)
+        resolved = (cache.ensure(Collection(name=collection, version=version, source=source))
+                    if version else cache.ensure_latest(collection, source))
     init_plugin_loader()
 
     names = list(list_plugins("module", [collection]).keys())
