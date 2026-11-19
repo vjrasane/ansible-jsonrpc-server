@@ -2,6 +2,22 @@
 
 <!-- version list -->
 
+## v1.0.1 (2026-11-19)
+
+### Bug Fixes
+
+- Set patch tags for semver release
+  ([`275c1f1`](https://github.com/vjrasane/ansible-jsonrpc-server/commit/275c1f1b7c58279a8d89dc8494b03b83b496c1fb))
+
+### Bugfix
+
+- Add liveness probe to the idempotency check of the bootstrap
+  ([`92f116b`](https://github.com/vjrasane/ansible-jsonrpc-server/commit/92f116b0d51a14ed6021deb0e21b9fd2ae579d20))
+
+- Env not passed to task
+  ([`e560cf3`](https://github.com/vjrasane/ansible-jsonrpc-server/commit/e560cf339fd284dc21de9f045b7d618cc9ca8574))
+
+
 ## v1.0.0 (2026-10-29)
 
 ### Continuous Integration
