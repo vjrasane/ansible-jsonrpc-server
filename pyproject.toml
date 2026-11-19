@@ -53,3 +53,8 @@ pythonVersion = "3.12"
 # version; the release workflow builds in a separate job checked out at the tag instead.
 [tool.semantic_release]
 tag_format = "v{version}"
+
+[tool.semantic_release.commit_parser_options]
+minor_tags = ["feat"]
+patch_tags = ["fix", "perf", "bugfix"]
+allowed_tags = ["feat", "fix", "perf", "bugfix", "build", "chore", "ci", "docs", "style", "refactor", "test"]
