@@ -19,7 +19,7 @@ warnings.filterwarnings(
 
 
 def build_execution(
-    host: HostSpec, fqcn: str, args: dict, task_vars: dict, flags: Flags,
+    host: HostSpec, fqcn: str, args: dict, task_vars: dict, flags: Flags, env: dict
 ) -> tuple[ActionBase, dict]:
     loader.init_plugin_loader()
     dl = DataLoader()
@@ -34,7 +34,7 @@ def build_execution(
     block = Block(play=play)
     task = Task.load(
         {"action": fqcn, "args": args, "check_mode": flags.check_mode,
-         "diff": flags.diff, "no_log": flags.no_log},
+         "diff": flags.diff, "no_log": flags.no_log, "environment": [env] if env else []},
         block=block,
     )
 

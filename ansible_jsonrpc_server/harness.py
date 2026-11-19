@@ -19,7 +19,7 @@ def run_action(params: RunParams) -> ResultFrame:
     no_log = params.flags.no_log
     timeout = params.flags.timeout
     plugin, task_vars = build_execution(
-        params.host, params.fqcn, params.args, params.vars, params.flags,
+        params.host, params.fqcn, params.args, params.vars, params.flags, params.env,
     )
     # Each task owns its worker's main thread, so a per-task SIGALRM is a clean soft
     # timeout: it interrupts plugin.run (e.g. a blocking connection) and we return a

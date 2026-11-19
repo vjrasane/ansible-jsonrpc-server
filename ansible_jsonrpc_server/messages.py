@@ -42,6 +42,7 @@ class RunParams(msgspec.Struct):
     args: dict = msgspec.field(default_factory=dict)
     vars: dict = msgspec.field(default_factory=dict)
     flags: Flags = msgspec.field(default_factory=Flags)
+    env: dict = msgspec.field(default_factory=dict)
     collection: Collection | None = None   # None → core/builtin, nothing to install
 
 
