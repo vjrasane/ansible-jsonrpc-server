@@ -29,7 +29,10 @@ if [ -n "${ANSIBLE_JSONRPC_SERVER_SRC:-}" ]; then
   install_spec="-e $ANSIBLE_JSONRPC_SERVER_SRC"
   key=dev
 else
-  [ -n "$version" ] || { echo "bootstrap: version argument required" >&2; exit 2; }
+  [ -n "$version" ] || {
+    echo "bootstrap: version argument required" >&2
+    exit 2
+  }
   install_spec="ansible-jsonrpc-server==$version"
   key=$version
 fi
@@ -42,12 +45,21 @@ venv="$root/venv/$key"
 # Python: explicit arg override, else newest discovered 3.13→3.11; require >= 3.11.
 if [ -z "$py" ]; then
   for c in python3.13 python3.12 python3.11; do
-    if command -v "$c" >/dev/null 2>&1; then py=$c; break; fi
+    if command -v "$c" >/dev/null 2>&1; then
+      py=$c
+      break
+    fi
   done
 fi
-[ -n "$py" ] || { echo "bootstrap: no python3.11+ interpreter found" >&2; exit 1; }
-"$py" -c 'import sys; raise SystemExit(0 if sys.version_info[:2] >= (3, 11) else 1)' \
-  || { echo "bootstrap: $py is older than python 3.11" >&2; exit 1; }
+[ -n "$py" ] || {
+  echo "bootstrap: no python3.11+ interpreter found" >&2
+  exit 1
+}
+"$py" -c 'import sys; raise SystemExit(0 if sys.version_info[:2] >= (3, 11) else 1)' ||
+  {
+    echo "bootstrap: $py is older than python 3.11" >&2
+    exit 1
+  }
 
 # Serialize concurrent first-runs; the lock is held until this process exits (fd 9).
 mkdir -p "$root"
@@ -58,7 +70,7 @@ fi
 
 # Idempotent: the .ready marker means a prior run fully provisioned this venv. (A "dev"
 # venv uses an editable install, so source edits are picked up live without reinstall.)
-if [ -f "$venv/.ready" ]; then
+if [ -f "$venv/.ready" ] && "$venv/bin/python" -c '' 2>/dev/null; then
   echo "$venv/bin/python"
   exit 0
 fi
@@ -77,6 +89,6 @@ rm -rf "$venv"
 # than being trusted forever. Output to stderr so stdout stays just the venv python path.
 "$venv/bin/python" -m pip check >&2
 "$venv/bin/python" -c "import ansible" >&2
-: > "$venv/.ready"
+: >"$venv/.ready"
 
 echo "$venv/bin/python"
